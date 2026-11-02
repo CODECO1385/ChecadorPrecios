@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartScan | Consulta de productos</title>
+<style>
+:root{--blue:#0865d8;--navy:#092b68;--ink:#14233b;--muted:#738198;--line:#dce5f1}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;padding:24px;background:linear-gradient(135deg,#e8eef6,#f8fafc);font-family:Inter,"Segoe UI",Arial,sans-serif;color:var(--ink);display:flex;align-items:center;justify-content:center}
+.device{width:min(100%,850px);background:#111827;border-radius:30px;padding:12px;box-shadow:0 25px 70px #102a4c35}
+.screen{min-height:690px;background:#f5f8fd;border-radius:20px;overflow:hidden}
+.topbar{height:60px;padding:0 26px;background:linear-gradient(90deg,#0752b5,#0875e8);display:flex;align-items:center;justify-content:space-between;color:white}
+.brand{font-size:20px;font-weight:800}.brand small{font-size:11px;font-weight:500;opacity:.85;margin-left:9px;letter-spacing:.7px}
+.status{font-size:12px;font-weight:600;opacity:.95}
+main{max-width:700px;margin:0 auto;padding:28px 26px 20px}
+.instruction{background:#102f67;color:white;border-radius:17px;padding:17px 20px;display:flex;gap:15px;align-items:center}
+.scan-symbol{width:48px;height:48px;border-radius:13px;background:#ffffff18;display:grid;place-items:center;font-size:27px;flex:none}
+.instruction h2{font-size:16px;margin:0 0 5px}.instruction p{font-size:12px;line-height:1.5;color:#c9daf4;margin:0}
+.reader{margin:20px auto 22px;width:180px;height:88px;background:linear-gradient(145deg,#29364b,#0b1220);border:3px solid #53627a;border-radius:18px;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 18px #0d1b3026}
+.reader:before{content:"";position:absolute;width:120px;height:5px;background:#ff3c3c;box-shadow:0 0 15px #ff2525;border-radius:10px}
+.reader:after{content:"";position:absolute;inset:9px;border:1px solid #77869c55;border-radius:10px}
+.reader span{position:absolute;bottom:-24px;color:#64748b;font-size:10px;font-weight:700;letter-spacing:1px}
+.product-card{background:white;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 8px 26px #16345b0b}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.card-head h1{font-size:19px;margin:0;color:#102b55}
+.pill{background:#e8f1ff;color:#0758bd;border-radius:20px;padding:7px 11px;font-size:10px;font-weight:800;white-space:nowrap}
+.product-layout{display:grid;grid-template-columns: minmax(150px, .8fr) 1.2fr;gap:22px;align-items:center;margin-top:18px}
+.image-slot{height:205px;border-radius:16px;background:linear-gradient(145deg,#f4f8ff,#e5eefb);display:flex;align-items:center;justify-content:center;overflow:hidden;color:#8ca6c9}
+.image-slot img{width:100%;height:100%;object-fit:contain;display:none}
+.image-placeholder{text-align:center;font-size:43px}.image-placeholder small{display:block;font-size:10px;margin-top:8px;color:#8ca0bb}
+.product-name{font-size:25px;line-height:1.18;font-weight:850;margin:0 0 7px;color:#14233b}
+.description{font-size:14px;color:#607089;line-height:1.5;margin:0 0 7px}
+.product-code{font-size:11px;color:#8290a4}
+.pricebox{background:linear-gradient(110deg,#0756c1,#0876e8);color:white;border-radius:14px;padding:14px 17px;margin-top:15px}
+.price-label{font-size:10px;letter-spacing:.8px;opacity:.9;font-weight:700}
+.price{font-size:39px;font-weight:900;line-height:1.15;margin-top:3px}
+.details{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+.detail{padding:10px 12px;border-radius:11px;background:#f5f8fc;border:1px solid var(--line)}
+.detail label{display:block;font-size:9px;letter-spacing:.7px;color:#8390a3;text-transform:uppercase}
+.detail strong{display:block;font-size:13px;margin-top:5px;color:#233957}
+.waiting{min-height:330px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+.waiting-icon{width:72px;height:72px;border-radius:22px;background:#e9f2ff;color:#1766c5;display:grid;place-items:center;font-size:34px;margin-bottom:17px}
+.waiting h2{margin:0 0 8px;font-size:21px;color:#18365f}
+.waiting p{max-width:390px;margin:0;color:#7a899e;font-size:13px;line-height:1.6}
+.not-found{display:none;margin-top:15px;background:#fff4f2;color:#a43b31;border:1px solid #ffd6d0;padding:12px 14px;border-radius:11px;font-size:13px;text-align:center}
+.scanner-input{position:absolute;left:-9999px;opacity:0;width:1px;height:1px}
+.bottom-note{text-align:center;color:#8290a4;font-size:11px;padding:15px 10px 0}
+@media(max-width:600px){body{padding:7px;align-items:flex-start}.device{padding:7px;border-radius:20px}.screen{min-height:calc(100vh - 28px)}.topbar{height:54px;padding:0 14px}.brand{font-size:17px}.brand small{display:none}.status{font-size:10px}main{padding:15px 12px}.instruction{padding:14px}.product-card{padding:15px}.product-layout{grid-template-columns:1fr;gap:14px}.image-slot{height:165px}.product-name{font-size:22px}.price{font-size:35px}.waiting{min-height:300px}}
+</style>
+</head>
+<body>
+<div class="device">
+ <div class="screen">
+  <header class="topbar">
+   <div class="brand">▣ SmartScan <small>CONSULTA DE PRODUCTOS</small></div>
+   <div class="status">● SISTEMA EN LÍNEA &nbsp; <span id="clock"></span></div>
+  </header>
+  <main>
+   <section class="instruction">
+    <div class="scan-symbol">⌗</div>
+    <div><h2>Escanea tu producto</h2><p>Pasa el código de barras frente al lector omnidireccional. El producto y su precio aparecerán automáticamente en pantalla.</p></div>
+   </section>
+   <div class="reader" aria-hidden="true"><span>SMARTSCAN · LECTOR</span></div>
+   <section class="product-card" id="productCard">
+    <div class="waiting" id="waiting">
+     <div class="waiting-icon">▤</div>
+     <h2>Listo para escanear</h2>
+     <p>Cuando el lector envíe un código de barras, SmartScan buscará el artículo en el inventario y mostrará únicamente su información y precio.</p>
+    </div>
+    <div id="productView" hidden>
+     <div class="card-head"><h1>Producto escaneado</h1><span class="pill">EN INVENTARIO</span></div>
+     <div class="product-layout">
+      <div class="image-slot"><img id="productImage" alt="Imagen del producto"><div class="image-placeholder" id="imagePlaceholder">▤<small>Imagen del producto</small></div></div>
+      <div>
+       <h2 class="product-name" id="productName"></h2>
+       <p class="description" id="productDescription"></p>
+       <div class="product-code" id="productCode"></div>
+       <div class="pricebox"><div class="price-label">PRECIO DEL PRODUCTO</div><div class="price" id="productPrice"></div></div>
+      </div>
+     </div>
+     <div class="details">
+      <div class="detail"><label>Marca</label><strong id="productBrand">—</strong></div>
+      <div class="detail"><label>Departamento</label><strong id="productDepartment">—</strong></div>
+     </div>
+    </div>
+    <div class="not-found" id="notFound">Código no encontrado en el inventario. Intenta escanear nuevamente.</div>
+   </section>
+   <input class="scanner-input" id="scannerInput" autocomplete="off" aria-label="Entrada del escáner de código de barras">
+   <div class="bottom-note">Consulta automática · Inventario cargado desde Excel · Solo lectura</div>
+  </main>
+ </div>
+</div>
+<script>
+const inventory=[{"code": "1", "name": "Agua Bonafont 1 L", "cost": 8.33, "price": 11.0, "wholesale": 0.0, "stock": 20, "min": 5, "max": 15, "department": "Refrescos"}, {"code": "2", "name": "Be Light Mango  1litro", "cost": 19.0, "price": 23.0, "wholesale": 0.0, "stock": 10, "min": 4, "max": 20, "department": "Refrescos"}, {"code": "3", "name": "Cag Teca Roja Promo", "cost": 58.88, "price": 75.0, "wholesale": 0.0, "stock": 10, "min": 3, "max": 20, "department": "Cerveceria"}, {"code": "4", "name": "Fanta Ret 355ml", "cost": 11.0, "price": 13.0, "wholesale": 0.0, "stock": 10, "min": 10, "max": 25, "department": "Refrescos"}, {"code": "5", "name": "CLORO", "cost": 28.81, "price": 44.0, "wholesale": 0.0, "stock": 16, "min": 6, "max": 90, "department": "LIMPIEZA"}, {"code": "6", "name": "JABON", "cost": 28.4, "price": 44.0, "wholesale": 0.0, "stock": 11, "min": 10, "max": 80, "department": "LIMÌEZA"}, {"code": "7", "name": "Harima Hot Kakes Amerucana", "cost": 40.0, "price": 48.0, "wholesale": 0.0, "stock": 16, "min": 15, "max": 70, "department": "CARNES"}, {"code": "8", "name": "Jamon De Pavo Virginia 290g", "cost": 51.93, "price": 63.0, "wholesale": 0.0, "stock": 27, "min": 20, "max": 30, "department": "CARNES"}, {"code": "9", "name": "Lala 100 15g Proteina Fresa 330ml", "cost": 14.0, "price": 17.0, "wholesale": 0.0, "stock": 50, "min": 23, "max": 60, "department": "LACTEOS"}, {"code": "10", "name": "Queso Amarillo Rebanadas La Villita 175g", "cost": 23.11, "price": 32.0, "wholesale": 0.0, "stock": 60, "min": 40, "max": 20, "department": "LACTEOS"}, {"code": "11", "name": "Rufles Mix 55g", "cost": 14.13, "price": 18.0, "wholesale": 0.0, "stock": 44, "min": 30, "max": 50, "department": "FRITOS"}, {"code": "12", "name": "Salchicha Para Azar Chimex 800g", "cost": 61.38, "price": 79.0, "wholesale": 0.0, "stock": 16, "min": 16, "max": 20, "department": "CARNES"}, {"code": "13", "name": "Salsa Molcageteada Roja 300g", "cost": 18.98, "price": 27.0, "wholesale": 0.0, "stock": 20, "min": 19, "max": 40, "department": "Abarrotes"}, {"code": "14", "name": "Tecate Roja 24 Oz", "cost": 25.0, "price": 32.0, "wholesale": 0.0, "stock": 23, "min": 21, "max": 30, "department": "Cerveceria"}, {"code": "15", "name": "100 Horquillas", "cost": 80.0, "price": 95.0, "wholesale": 0.0, "stock": 25, "min": 33, "max": 23, "department": "Abarrotes"}, {"code": "16", "name": "2 Cag Tecate Ligt", "cost": 46.75, "price": 82.0, "wholesale": 0.0, "stock": 20, "min": 10, "max": 50, "department": "Cerveceria"}, {"code": "17", "name": "2 De 24 Onz Miller Lite", "cost": 43.0, "price": 52.0, "wholesale": 0.0, "stock": 17, "min": 5, "max": 30, "department": "Cerveceria"}, {"code": "18", "name": "2 Esponjas Fibras", "cost": 8.0, "price": 12.0, "wholesale": 0.0, "stock": 30, "min": 54, "max": 31, "department": "LIMPIEZA"}, {"code": "19", "name": "2 Lat Indio Promo", "cost": 30.12, "price": 35.0, "wholesale": 0.0, "stock": 32, "min": 44, "max": 25, "department": "Cerveceria"}];
+const byCode=new Map(inventory.map(p=>[String(p.code).replace(/\.0$/,''),p]));
+const input=document.getElementById('scannerInput');
+const money=n=>new Intl.NumberFormat('es-US',{style:'currency',currency:'USD'}).format(Number(n)||0);
+function getBrand(name){
+ const known=['Coca-Cola','Pepsi','Sprite','Fanta','Dr Pepper','Red Bull','Monster','Jarritos','Gatorade','Nestlé','Sabritas','Doritos','Lays','Bimbo'];
+ const lower=String(name||'').toLocaleLowerCase('es');
+ const brand=known.find(b=>lower.includes(b.toLocaleLowerCase('es')));
+ return brand||'No especificada';
+}
+function showProduct(p){
+ document.getElementById('waiting').hidden=true;
+ document.getElementById('productView').hidden=false;
+ document.getElementById('notFound').style.display='none';
+ document.getElementById('productName').textContent=p.name;
+ document.getElementById('productDescription').textContent=p.name;
+ document.getElementById('productCode').textContent='Código: '+p.code;
+ document.getElementById('productPrice').textContent=money(p.price);
+ document.getElementById('productBrand').textContent=getBrand(p.name);
+ document.getElementById('productDepartment').textContent=p.department||'—';
+ // Para añadir una foto después, asigna una URL en el campo image del producto.
+ const img=document.getElementById('productImage');
+ const placeholder=document.getElementById('imagePlaceholder');
+ if(p.image){img.src=p.image;img.style.display='block';placeholder.style.display='none';}
+ else{img.removeAttribute('src');img.style.display='none';placeholder.style.display='block';}
+}
+function scan(code){
+ code=String(code||'').trim().replace(/[\r\n]/g,'').replace(/\.0$/,'');
+ if(!code)return;
+ const p=byCode.get(code);
+ if(p)showProduct(p);
+ else{
+  document.getElementById('waiting').hidden=true;
+  document.getElementById('productView').hidden=true;
+  document.getElementById('notFound').style.display='block';
+ }
+}
+input.addEventListener('keydown',e=>{
+ if(e.key==='Enter'){
+  e.preventDefault();scan(input.value);input.value='';
+ }
+});
+/* El lector USB/Bluetooth configurado como teclado escribe el código y termina con Enter.
+   La página mantiene el foco en el campo invisible para recibir el escaneo. */
+document.addEventListener('click',()=>input.focus());
+window.addEventListener('load',()=>input.focus());
+window.addEventListener('pageshow',()=>input.focus());
+function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('es-US',{hour:'2-digit',minute:'2-digit'});}
+updateClock();setInterval(updateClock,15000);
+</script>
+</body>
+</html>
